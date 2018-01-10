@@ -1,0 +1,30 @@
+<label>Gerät auswählen:</label>
+<select ng-model="$ctrl.config.id">
+    <option ng-repeat="option in $ctrl.devices" value="{{option.id}}">{{option.name}}</option>
+</select>
+<label>Zeitraum auswählen:</label>
+<select ng-model="$ctrl.config.time">
+    <option value="1" >1 Tag</option>
+    <option value="7" selected>7 tage</option>
+    <option value="14">14 Tage</option>
+    <option value="30">30 Tage</option>
+</select>
+<label>Area Type</label>
+<select ng-model="$ctrl.config.widgettype">
+    <option value="" selected>Default</option>
+    <option value="area">Area</option>
+    <option value="column">Balken</option>
+    <option value="scatter">Scatter</option>
+</select>
+<label>Farbe</label>
+
+<select ng-model="$ctrl.config.color">
+    <option value="black" selected>Default</option>
+    <option value="#ff0000">Rot</option>
+    <option value="#00ff00">Grün</option>
+    <option value="rgb(149, 206, 255)">Blau</option>
+    <option value="#fbec00">Gelb</option>
+    <option value="#fb00e6">Pink</option>
+    <option value="#000">Schwarz</option>
+    <option value="#04f2b7">Türkis</option>
+</select>
