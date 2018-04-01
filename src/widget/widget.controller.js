@@ -2,7 +2,7 @@ let $data, $element, $scope, moment, _, $event;
 
 export default class WidgetController {
 
-    static $inject = ['od.data.service', '$element', '$scope', 'moment', 'lodash', 'od.event.service'];
+    static get $inject() { return ['opendash/services/data', '$element', '$scope', 'moment', 'lodash', 'opendash/services/event']; }
 
     constructor(_$data, _$element, _$scope, _moment, _lodash, _$event) {
         $data = _$data;
@@ -15,79 +15,67 @@ export default class WidgetController {
         this.hcArea = null
     }
 
-    $onInit() {
+    async $onInit() {
         this.state.alert = false;
 
-        if (!this.config.id) {
+        if (!this.config.id || !this.config.color || !this.config.widgettype || !this.config.time) {
             this.state.config = false;
             return;
         }
 
-        this.load();
-        
-        $event.on('od-widgets-changed', () => {
-            this.load();
-        });
+        let id = JSON.parse(this.config.id)[0];
+        let valueNumber = JSON.parse(this.config.id)[1];
 
-        $event.on('od-dashboard-changed', () => {
-            this.load();
-        });
-    }
+        let sensor = $data.get(id);
 
-    load() {
-        let sensor = $data.get(this.config.id);
-
-        if (!sensor) {
-            console.log("NO_SENSOR"); // TODO
+        if (!sensor || !sensor.history) {
+            console.log('[opendash-widget-highchart-multi] BAD CONFIG');
+            this.state.config = false;
+            return;
         }
 
-        let request = sensor.history({
+        let data = await sensor.history({
             since: moment().subtract(this.config.time, 'day'),
         });
 
-        request.then((data) => {
-            var series = [];
-            var items = [];
-            for (var i = 0; i < data.length; i++) {
-                items.push([data[i].date, parseFloat(data[i].value[0].toFixed(2))]);
-            }
-            items = _.sortBy(items, o => o[0]);
-            series.push({
-                showInLegend: false,
-                color: this.config.color,
-                name: 'Werte',
-                data: items
-            });
-            var type = this.config.widgettype;
-            this.hcArea = {
-                useHighStock: true,
-                chart: {
-                    type: type,
-                    zoomType: 'x',
-                },
-                title: {
-                    text: ''
-                },
-                credits: {
-                    enabled: false
-                },
-                xAxis: {
-                    type: 'datetime',
-                    minRange: 1000 * 3600,
-                },
-                yAxis: {},
-                //color: this.config.color,
-                plotOptions: {
-                    series: {
-                        turboThreshold: 10
-                    }
-                },
-                series: series,
-                height: null,
-            }
+        let items = _.chain(data).map(e => [e.date, parseFloat(e.value[valueNumber].toFixed(2))]).sortBy(e => e[0]).value();
 
-            this.loading = false;
-        });
+        let series = [{
+            showInLegend: false,
+            color: this.config.color,
+            name: 'Werte',
+            data: items
+        }];
 
+        let type = this.config.widgettype;
+
+        this.hcArea = {
+            useHighStock: true,
+            chart: {
+                type: type,
+                zoomType: 'x',
+            },
+            title: {
+                text: ''
+            },
+            credits: {
+                enabled: false
+            },
+            xAxis: {
+                type: 'datetime',
+                minRange: 1000 * 3600,
+            },
+            yAxis: {},
+            //color: this.config.color,
+            plotOptions: {
+                series: {
+                    turboThreshold: 10
+                }
+            },
+            series: series,
+            height: null,
+        }
+
+        this.loading = false;
     }
 }
